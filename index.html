@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GCP Observability: Anomaly Forecasting & Predictive Alerting</title>
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Chart.js and annotation plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo-glow"></div>
+        <i data-lucide="activity" class="brand-icon"></i>
+        <div class="brand-text">
+          <h1>GCP telemetry</h1>
+          <span>GCP Observability</span>
+        </div>
+      </div>
+      
+      <nav class="nav-menu">
+        <button class="nav-item active" data-tab="overview">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Overview Dashboard</span>
+        </button>
+        <button class="nav-item" data-tab="sandbox">
+          <i data-lucide="terminal"></i>
+          <span>Telemetry Sandbox</span>
+        </button>
+        <button class="nav-item" data-tab="playbook">
+          <i data-lucide="book-open"></i>
+          <span>GCP Playbook</span>
+        </button>
+        <button class="nav-item" data-tab="migration">
+          <i data-lucide="arrow-right-left"></i>
+          <span>ELK to GCP Map</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="project-tag">
+          <div class="pulse-dot"></div>
+          <div class="project-info">
+            <span class="label">Active GCP Project</span>
+            <span class="value">gke-demos-363017</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Navigation/Header -->
+      <header class="header">
+        <div class="header-left">
+          <h2 id="page-title">Overview Dashboard</h2>
+          <p id="page-subtitle">Real-time telemetry forecasting, machine learning, and anomaly detection control center.</p>
+        </div>
+        <div class="header-right">
+          <div class="system-time">
+            <i data-lucide="clock"></i>
+            <span id="clock-display">2026-06-07 17:21:00</span>
+          </div>
+          <div class="status-indicator">
+            <span class="status-dot healthy"></span>
+            <span class="status-text">All Systems Monitored</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- TAB 1: OVERVIEW DASHBOARD -->
+      <section id="tab-overview" class="tab-content active">
+        <!-- Overview Grid Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-label">Total Monitored Streams</span>
+              <div class="stat-icon-wrapper normal">
+                <i data-lucide="database"></i>
+              </div>
+            </div>
+            <div class="stat-value">10</div>
+            <div class="stat-footer">
+              <span class="trend positive"><i data-lucide="check-circle-2"></i> 100% Configured</span>
+              <span class="trend-label">Across Infrastructure, Logs, Capacity</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-label">Active Anomalies</span>
+              <div class="stat-icon-wrapper warning" id="anomaly-badge-wrapper">
+                <i data-lucide="alert-triangle"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="active-anomalies-count">1</div>
+            <div class="stat-footer">
+              <span class="trend negative" id="anomaly-trend-indicator"><i data-lucide="arrow-up-right"></i> Outlier Detected</span>
+              <span class="trend-label" id="anomaly-trend-label">Prometheus Swap Memory Peak</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-label">Predictive Alerts Active</span>
+              <div class="stat-icon-wrapper info">
+                <i data-lucide="trending-up"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="active-forecasts-count">1</div>
+            <div class="stat-footer">
+              <span class="trend warning"><i data-lucide="clock"></i> Threshold Risk in 3.4d</span>
+              <span class="trend-label">Daily Disk Trend Forecasting</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-label">Telemetry Health Rating</span>
+              <div class="stat-icon-wrapper premium">
+                <i data-lucide="shield-check"></i>
+              </div>
+            </div>
+            <div class="stat-value">98.4%</div>
+            <div class="stat-footer">
+              <span class="trend positive"><i data-lucide="sparkles"></i> Optimal</span>
+              <span class="trend-label">Monarch Backend Performance</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Overview Split Panels -->
+        <div class="dashboard-split">
+          <!-- Left: Overview Dataset Monitoring Health Table -->
+          <div class="panel glass-card font-card">
+            <div class="panel-header">
+              <h3><i data-lucide="layers" class="panel-icon"></i> GCP Telemetry Streams (Prometheus & Logs)</h3>
+              <span class="badge">Monarch + BigQuery</span>
+            </div>
+            <div class="table-container">
+              <table class="telemetry-table">
+                <thead>
+                  <tr>
+                    <th>Dataset Name</th>
+                    <th>Source Type</th>
+                    <th>ML Algorithm</th>
+                    <th>Current Value</th>
+                    <th>Risk Status</th>
+                  </tr>
+                </thead>
+                <tbody id="overview-telemetry-tbody">
+                  <!-- Generated Dynamically by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Right: Real-Time Anomaly Activity Stream -->
+          <div class="panel glass-card sidebar-panel">
+            <div class="panel-header">
+              <h3><i data-lucide="terminal" class="panel-icon"></i> Live GCP Logging Anomaly Stream</h3>
+              <button class="btn btn-icon" id="clear-logs-btn" title="Clear Console Log"><i data-lucide="trash-2"></i></button>
+            </div>
+            <div class="live-logs-console" id="live-gcp-logs">
+              <!-- Animated logs appended dynamically by JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: TELEMETRY SANDBOX -->
+      <section id="tab-sandbox" class="tab-content">
+        <div class="sandbox-container">
+          <!-- Left: Selector and Sliders -->
+          <div class="sandbox-controls glass-card">
+            <div class="control-group">
+              <h3><i data-lucide="list"></i> Select Telemetry Stream</h3>
+              <div class="custom-select-wrapper">
+                <select id="dataset-selector" class="custom-select">
+                  <optgroup label="Prometheus Infrastructure Metrics (GMP)">
+                    <option value="cpu" selected>Prometheus CPU Usage</option>
+                    <option value="paging">Prometheus Memory Paging</option>
+                    <option value="swap">Prometheus Swap Memory</option>
+                    <option value="process_count">Prometheus Process Count</option>
+                    <option value="phys_mem">Prometheus Physical Memory</option>
+                    <option value="threads">Prometheus System Threads Count</option>
+                  </optgroup>
+                  <optgroup label="ServiceNow Log Analytics (Cloud Logging)">
+                    <option value="servicenow_country">ServiceNow Incident Volume by Country</option>
+                    <option value="servicenow_location">ServiceNow Incident Volume by Site</option>
+                  </optgroup>
+                  <optgroup label="Capacity Trends & Forecasts">
+                    <option value="disk_trend">Daily Disk Trend Aggregation</option>
+                    <option value="memory_trend">Memory Utilization Forecasting</option>
+                  </optgroup>
+                  <optgroup label="Graph Neural Networks (GNNs)">
+                    <option value="gnn_topology">GNN Infrastructure Topology Map</option>
+                  </optgroup>
+                </select>
+              </div>
+            </div>
+
+            <!-- Parameters Sliders -->
+            <div class="control-group">
+              <h3><i data-lucide="sliders"></i> ML Model Parameters</h3>
+              
+              <div class="slider-wrapper">
+                <div class="slider-header">
+                  <span class="slider-label">Anomaly Sensitivity (CI)</span>
+                  <span class="slider-value" id="sensitivity-val">99%</span>
+                </div>
+                <input type="range" id="slider-sensitivity" min="80" max="99.9" step="0.1" value="99" class="range-slider">
+                <span class="slider-helper">Probability threshold bounds before triggering an anomaly flag. Equivalent to ARIMA confidence level.</span>
+              </div>
+
+              <div class="slider-wrapper">
+                <div class="slider-header">
+                  <span class="slider-label">Forecast Horizon</span>
+                  <span class="slider-value" id="horizon-val">14 Days</span>
+                </div>
+                <input type="range" id="slider-horizon" min="1" max="30" step="1" value="14" class="range-slider">
+                <span class="slider-helper">Number of days into the future GCP should predict the timeseries.</span>
+              </div>
+            </div>
+
+            <!-- Manual Incident/Anomaly Injector -->
+            <div class="control-group">
+              <h3><i data-lucide="zap"></i> Manual Incident Injector</h3>
+              <p class="section-desc">Inject simulated architectural failures to verify how GCP's out-of-the-box forecasting and alerting models react immediately.</p>
+              <div class="btn-group-vertical">
+                <button class="btn btn-danger" id="inject-spike-btn"><i data-lucide="trending-up"></i> Inject Spike (Anomaly)</button>
+                <button class="btn btn-warning" id="inject-drop-btn"><i data-lucide="trending-down"></i> Inject Sudden Drop (Crash)</button>
+                <button class="btn btn-info" id="inject-drift-btn"><i data-lucide="activity"></i> Inject Step Change (Drift)</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Center: The Live Chart and Metadata -->
+          <div class="sandbox-visualization">
+            <!-- Visual Chart Card -->
+            <div class="chart-card glass-card">
+              <div class="chart-header">
+                <div class="chart-title-wrapper">
+                  <span class="category-tag" id="chart-metric-category">Google Managed Prometheus</span>
+                  <h3 id="chart-metric-title">Prometheus CPU Usage Anomaly Detection</h3>
+                </div>
+                <div class="chart-badges">
+                  <div class="live-indicator">
+                    <span class="live-dot"></span>
+                    <span>LIVE DATA</span>
+                  </div>
+                  <span class="badge-status status-normal" id="chart-metric-status">HEALTHY</span>
+                </div>
+              </div>
+              
+              <div class="chart-wrapper">
+                <canvas id="telemetry-chart"></canvas>
+              </div>
+
+              <!-- Mini Stats inside Sandbox Chart Panel -->
+              <div class="chart-stats">
+                <div class="mini-stat">
+                  <span class="label">Current Value</span>
+                  <span class="value" id="stat-current">52.4%</span>
+                </div>
+                <div class="mini-stat">
+                  <span class="label">Historical Mean</span>
+                  <span class="value" id="stat-mean">48.2%</span>
+                </div>
+                <div class="mini-stat">
+                  <span class="label">Forecast Baseline</span>
+                  <span class="value" id="stat-forecast">49.1%</span>
+                </div>
+                <div class="mini-stat">
+                  <span class="label" id="stat-forecast-exhaustion-label">Capacity Risk</span>
+                  <span class="value status-normal" id="stat-exhaustion">None</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Code Blueprints Selector and Content -->
+            <div class="blueprint-card glass-card">
+              <div class="blueprint-header">
+                <div class="blueprint-tabs">
+                  <button class="blueprint-tab active" data-bptab="bqml">
+                    <i data-lucide="database"></i> <span>BigQuery ML SQL</span>
+                  </button>
+                  <button class="blueprint-tab" data-bptab="monitoring">
+                    <i data-lucide="bell"></i> <span>Cloud Monitoring Alerts</span>
+                  </button>
+                  <button class="blueprint-tab" data-bptab="mql_promql">
+                    <i data-lucide="code-2"></i> <span>PromQL / MQL Queries</span>
+                  </button>
+                  <button class="blueprint-tab" data-bptab="terraform">
+                    <i data-lucide="file-code"></i> <span>Terraform IAC</span>
+                  </button>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="copy-blueprint-btn">
+                  <i data-lucide="copy"></i> <span>Copy Code</span>
+                </button>
+              </div>
+
+              <div class="blueprint-body">
+                <pre><code id="blueprint-code-display" class="language-sql">-- Creating model...</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: GCP PLAYBOOK -->
+      <section id="tab-playbook" class="tab-content">
+        <div class="playbook-container glass-card">
+          <h2>GCP Implementation Playbook: Deployment Guide</h2>
+          <p class="subtitle">A step-by-step technical guide for implementing this exact Anomaly Forecasting system in your GCP environment (<code>gke-demos-363017</code>).</p>
+          
+          <div class="playbook-steps">
+            <!-- Step 1 -->
+            <div class="playbook-step">
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <h3>Upgrade Cloud Logging to Log Analytics</h3>
+                <p>To run BigQuery ML `ARIMA_PLUS` models directly on ServiceNow logs, you must first upgrade your logging bucket (e.g. <code>_Default</code>) to use Log Analytics. This links the bucket directly to BigQuery for SQL-based analysis.</p>
+                <div class="code-box">
+                  <pre><code># Upgrade the _Default logging bucket to support Log Analytics
+gcloud logging buckets update _Default \
+    --location=global \
+    --enable-analytics
+
+# Verify the BigQuery linked dataset name
+gcloud logging buckets describe _Default \
+    --location=global</code></pre>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="playbook-step">
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <h3>Define Log-Based Metrics (for ServiceNow Logs)</h3>
+                <p>If ServiceNow logs are sent via GKE stdout or Cloud Logging agent, create Log-Based Metrics to extract incident counts and partition by country and site location.</p>
+                <div class="code-box">
+                  <pre><code># Create log-based metric to count incidents
+gcloud logging metrics create servicenow_incident_count \
+    --description="Counts the daily ServiceNow incident volumes" \
+    --log-filter="jsonPayload.event=\"incident\" AND jsonPayload.message:\"ServiceNow incident created\"" \
+    --value-extractor="INT64(jsonPayload.incident_count)"</code></pre>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="playbook-step">
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <h3>Train the BigQuery ML ARIMA_PLUS Model</h3>
+                <p>Run the training SQL directly in the BigQuery interface of <code>gke-demos-363017</code>. The <code>ARIMA_PLUS</code> model will automatically handle seasonality, holiday trends, missing data imputation, and outlier scrubbing.</p>
+                <div class="code-box">
+                  <pre><code>CREATE OR REPLACE MODEL `gke-demos-363017.servicenow_forecasts.incident_model`
+OPTIONS(
+  model_type = 'ARIMA_PLUS',
+  time_series_timestamp_col = 'timestamp',
+  time_series_data_col = 'incident_count',
+  time_series_id_col = ['country', 'site'],
+  holiday_region = 'GLOBAL',
+  clean_spikes_and_dips = TRUE,
+  adjust_step_changes = TRUE
+) AS
+SELECT 
+  TIMESTAMP(FORMAT_TIMESTAMP('%Y-%m-%d 00:00:00', timestamp)) as timestamp,
+  jsonPayload.country,
+  jsonPayload.site,
+  COUNT(1) as incident_count
+FROM `gke-demos-363017.global._Default._AllLogs`
+WHERE logName LIKE '%servicenow%'
+  AND timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)
+GROUP BY 1, 2, 3;</code></pre>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="playbook-step">
+              <div class="step-num">4</div>
+              <div class="step-content">
+                <h3>Schedule Predictive Alerting Policies</h3>
+                <p>Using Google Cloud Monitoring, deploy a Predictive Alert policy on your infrastructure metrics. This triggers alerts when a capacity limit is forecast to be exceeded within 24 hours.</p>
+                <div class="code-box">
+                  <pre><code># Apply Terraform configuration for predictive alerting
+terraform init
+terraform plan -var="project_id=gke-demos-363017"
+terraform apply -auto-approve</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: MIGRATION MAP -->
+      <section id="tab-migration" class="tab-content">
+        <div class="migration-container glass-card">
+          <h2>ELK Stack to Google Cloud Observability Transition Blueprint</h2>
+          <p class="subtitle">A strategic blueprint showcasing how to map Elasticsearch, Logstash, Kibana, and Kibana's machine learning modules to GCP native observability features.</p>
+          
+          <div class="architecture-grid">
+            <div class="arch-card">
+              <h3><i data-lucide="arrow-right-left"></i> Architecture Mapping</h3>
+              <div class="architecture-flow">
+                <div class="flow-step">
+                  <h4>ELK Stack</h4>
+                  <div class="item">Logstash / Filebeat</div>
+                  <div class="item">Elasticsearch Search Engine</div>
+                  <div class="item">Kibana UI dashboards</div>
+                  <div class="item">Kibana Machine Learning</div>
+                </div>
+                <div class="flow-arrow">
+                  <i data-lucide="chevrons-right"></i>
+                </div>
+                <div class="flow-step gcp-step">
+                  <h4>GCP Observability</h4>
+                  <div class="item highlight">Cloud Logging & Ops Agent</div>
+                  <div class="item highlight">Log Analytics (BigQuery backend)</div>
+                  <div class="item highlight">Cloud Monitoring Dashboards</div>
+                  <div class="item highlight">BigQuery ML + Monarch Predict</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="arch-card">
+              <h3><i data-lucide="shield-alert"></i> Why GCP Native beats ELK for ML</h3>
+              <ul class="migration-list">
+                <li>
+                  <strong>No Infrastructure Overhead:</strong> Kibana ML requires dedicated Elasticsearch ML nodes ($), which must be sized, scaled, and managed. BigQuery ML is 100% serverless, zero-ops, and executes in seconds.
+                </li>
+                <li>
+                  <strong>Global Scale via Monarch:</strong> Google Managed Prometheus metrics are stored globally in Monarch, enabling extremely fast queries (PromQL/MQL) without index scaling issues or high cluster costs.
+                </li>
+                <li>
+                  <strong>Multi-Series Ingestion Natively:</strong> Using BQML's <code>time_series_id_col</code>, you can forecast millions of timeseries (such as incidents grouped by 100 sites and 50 countries) in a single, simple SQL call.
+                </li>
+                <li>
+                  <strong>Advanced Time-Series Modeling out of the box:</strong> GCP's <code>ARIMA_PLUS</code> model integrates automatic holiday effects (for 50+ countries), handles daylight savings, imputes missing timestamps, and handles level shifts automatically.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Main JavaScript File -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
