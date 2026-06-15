@@ -1,6 +1,8 @@
-# Production GCP Observability Pipeline: BigQuery ML & GraphML
+**This repo is for Demo Purposes and cannot be used for production**
 
-This directory contains a production-grade infrastructure blueprint and ML pipeline designed to implement **SQL-driven Anomaly Forecasting** and **Topological Graph Neural Network (GNN) Cascade Prediction** on real Google Cloud Platform (GCP) environments.
+# GCP Observability Pipeline: BigQuery ML & GraphML
+
+This directory contains a infrastructure blueprint and ML pipeline designed to implement **SQL-driven Anomaly Forecasting** and **Topological Graph Neural Network (GNN) Cascade Prediction** on real Google Cloud Platform (GCP) environments.
 
 This pipeline is optimized for organizations that already process terabytes of application logs and metrics and want to automate:
 1. **Incident Forecasting:** Predict incident and error volume peaks up to 14 days in advance using BigQuery ML ARIMA+ models.
