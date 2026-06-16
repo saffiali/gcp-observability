@@ -1,9 +1,11 @@
 # Create the BigQuery Dataset for holding models, predictions, and topology tables.
+# Note: We enforce the "US" multi-region location to allow querying the global Log Analytics dataset.
 resource "google_bigquery_dataset" "observability_dataset" {
-  project     = var.project_id
-  dataset_id  = var.dataset_id
-  location    = var.region
-  description = "Dataset for Production Observability Anomaly Forecasting & GraphML Topology"
+  project                    = var.project_id
+  dataset_id                 = var.dataset_id
+  location                   = "US"
+  description                = "Dataset for Production Observability Anomaly Forecasting & GraphML Topology"
+  delete_contents_on_destroy = true
 }
 
 # Create table for GNN Topology Nodes
@@ -76,7 +78,7 @@ EOF
 resource "google_bigquery_job" "train_arima_incidents" {
   project  = var.project_id
   job_id   = "train_arima_incidents_${formatdate("YYYYMMDDHHmmss", timestamp())}"
-  location = var.region
+  location = "US" # Matches dataset location
 
   query {
     query = <<-SQL
@@ -99,7 +101,7 @@ resource "google_bigquery_job" "train_arima_incidents" {
           'unknown-service'
         ) AS service_name,
         COUNT(1) AS error_count
-      FROM `${var.project_id}.${var.region}.${var.existing_log_bucket_name}._AllLogs`
+      FROM `${var.project_id}.global.${var.existing_log_bucket_name}._AllLogs`
       WHERE severity IN ('ERROR', 'CRITICAL', 'WARNING')
         AND timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
       GROUP BY 1, 2;
@@ -112,6 +114,12 @@ resource "google_bigquery_job" "train_arima_incidents" {
   depends_on = [
     google_bigquery_dataset.observability_dataset
   ]
+
+  # Enforce a delay to ensure that the asynchronous model training query is completed
+  # before Terraform attempts to create views that reference it.
+  provisioner "local-exec" {
+    command = "sleep 30"
+  }
 
   lifecycle {
     ignore_changes = [job_id]
@@ -170,7 +178,7 @@ resource "google_bigquery_table" "server_unresponsive_detection_view" {
     query = <<-SQL
       WITH cpu_data AS (
         SELECT
-          TIMESTAMP_TRUNC(timestamp, MINUTE, 5) AS timestamp_bucket,
+          TIMESTAMP_SECONDS(DIV(UNIX_SECONDS(timestamp), 300) * 300) AS timestamp_bucket,
           COALESCE(resource.labels.instance_id, resource.labels.node_name, 'unknown-server') AS server_name,
           AVG(point.value.double_value) AS cpu_util
         FROM `${var.project_id}.${var.metrics_export_dataset_id}.time_series`
@@ -180,7 +188,7 @@ resource "google_bigquery_table" "server_unresponsive_detection_view" {
       ),
       throughput_data AS (
         SELECT
-          TIMESTAMP_TRUNC(timestamp, MINUTE, 5) AS timestamp_bucket,
+          TIMESTAMP_SECONDS(DIV(UNIX_SECONDS(timestamp), 300) * 300) AS timestamp_bucket,
           COALESCE(resource.labels.instance_id, resource.labels.node_name, 'unknown-server') AS server_name,
           AVG(point.value.double_value) AS throughput_rate
         FROM `${var.project_id}.${var.metrics_export_dataset_id}.time_series`
@@ -190,7 +198,7 @@ resource "google_bigquery_table" "server_unresponsive_detection_view" {
       ),
       socket_data AS (
         SELECT
-          TIMESTAMP_TRUNC(timestamp, MINUTE, 5) AS timestamp_bucket,
+          TIMESTAMP_SECONDS(DIV(UNIX_SECONDS(timestamp), 300) * 300) AS timestamp_bucket,
           COALESCE(resource.labels.instance_id, resource.labels.node_name, 'unknown-server') AS server_name,
           AVG(point.value.int64_value) AS active_connections
         FROM `${var.project_id}.${var.metrics_export_dataset_id}.time_series`
@@ -218,7 +226,8 @@ resource "google_bigquery_table" "server_unresponsive_detection_view" {
   }
 
   depends_on = [
-    google_bigquery_dataset.observability_dataset
+    google_bigquery_dataset.observability_dataset,
+    google_bigquery_table.time_series
   ]
 }
 
@@ -231,7 +240,7 @@ resource "google_bigquery_table" "connectivity_degradation_view" {
   view {
     query = <<-SQL
       SELECT
-        TIMESTAMP_TRUNC(timestamp, MINUTE, 5) AS timestamp_bucket,
+        TIMESTAMP_SECONDS(DIV(UNIX_SECONDS(timestamp), 300) * 300) AS timestamp_bucket,
         COALESCE(
           JSON_VALUE(resource.labels.instance_id),
           JSON_VALUE(resource.labels.container_name),
@@ -251,7 +260,7 @@ resource "google_bigquery_table" "connectivity_degradation_view" {
           )), 
           COUNT(1)
         ) AS db_error_ratio
-      FROM `${var.project_id}.${var.region}.${var.existing_log_bucket_name}._AllLogs`
+      FROM `${var.project_id}.global.${var.existing_log_bucket_name}._AllLogs`
       WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
       GROUP BY 1, 2
     SQL
@@ -280,7 +289,7 @@ resource "google_bigquery_table" "recurring_incident_patterns_view" {
             'unknown-server'
           ) AS rebooted_server,
           textPayload AS reboot_reason
-        FROM `${var.project_id}.${var.region}.${var.existing_log_bucket_name}._AllLogs`
+        FROM `${var.project_id}.global.${var.existing_log_bucket_name}._AllLogs`
         WHERE severity >= 'INFO'
           AND (
             textPayload LIKE '%system reboot%' OR
@@ -303,7 +312,7 @@ resource "google_bigquery_table" "recurring_incident_patterns_view" {
           f.textPayload AS failure_message,
           TIMESTAMP_DIFF(f.timestamp, r.reboot_time, MINUTE) AS minutes_since_reboot
         FROM reboot_events r
-        JOIN `${var.project_id}.${var.region}.${var.existing_log_bucket_name}._AllLogs` f
+        JOIN `${var.project_id}.global.${var.existing_log_bucket_name}._AllLogs` f
           ON f.timestamp > r.reboot_time 
           AND f.timestamp <= TIMESTAMP_ADD(r.reboot_time, INTERVAL 2 HOUR)
         WHERE f.severity IN ('ERROR', 'CRITICAL')

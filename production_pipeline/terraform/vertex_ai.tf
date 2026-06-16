@@ -1,7 +1,7 @@
 # Deploy Vertex AI Model Endpoint for Graph Neural Network
 resource "google_vertex_ai_endpoint" "gnn_endpoint" {
   project      = var.project_id
-  name         = "gnn-cascade-predictor"
+  name         = "gnn-cascade-predictor-prod"
   display_name = "GNN Anomaly Cascade Predictor Endpoint"
   location     = var.region
 

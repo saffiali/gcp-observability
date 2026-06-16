@@ -19,9 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install CPU-optimized PyTorch directly to reduce image size (bypasses heavy CUDA runtimes)
-RUN pip3 install --no-cache-dir --no-index --find-links https://download.pytorch.org/whl/cpu \
-    torch \
-    torchvision
+RUN pip3 install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
 # Install Pure-Python PyTorch Geometric and FastAPI Serving packages
 # NOTE: Modern torch-geometric package operates 100% out-of-the-box on pure python.
@@ -32,10 +30,17 @@ RUN pip3 install --no-cache-dir \
     uvicorn \
     pydantic
 
-# Copy our GNN micro-service code and model weights into the container
+# Copy GNN model structure and training scripts
 COPY model.py /app/model.py
+COPY train.py /app/train.py
+
+# Execute GNN convolved training inside the container during image build
+# This generates model.pt and metadata.json directly inside the target artifacts directory in the cloud build context,
+# meaning the host local machine requires zero local Docker, PyTorch, or PyG dependencies!
+RUN python3 /app/train.py
+
+# Copy custom prediction server script
 COPY serve.py /app/serve.py
-COPY artifacts/ /app/artifacts/
 
 # Expose standard container port 8080 (Vertex AI default serving gateway)
 EXPOSE 8080

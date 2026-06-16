@@ -162,7 +162,7 @@ def train_model():
             print(f" - [{service_name}] -> True Cascade Risk: {true_risk:.1f}% | GNN Forecasted Risk: {pred_risk:.1f}%")
 
     # 7. Serialize Weights and Metadata configuration
-    output_dir = "ml_gnn/artifacts"
+    output_dir = os.path.join(os.path.dirname(__file__), "artifacts")
     os.makedirs(output_dir, exist_ok=True)
     
     model_path = os.path.join(output_dir, "model.pt")
